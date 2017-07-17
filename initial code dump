@@ -1,0 +1,65 @@
+#include <SPI.h>
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+#define OLED_RESET 4
+Adafruit_SSD1306 display(OLED_RESET);
+#if (SSD1306_LCDHEIGHT != 64)
+#error("Height incorrect, please fix Adafruit_SSD1306.h!");
+#endif
+void setup()   {                
+  Serial.begin(9600);
+  display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
+  display.display(); //redo loaded art so it's like "something clock"
+  delay(200); //stay for a little
+  display.clearDisplay(); //clear and end setup
+} //end setup
+void loop() {
+  int XCENTER = 128/4 - 1;
+  int YCENTER = 64/2 - 1;
+  int hr = 0;
+  int mn = 0;
+  int sc = 0;
+  char ap;
+  while(1){ 
+    timeGet(hr,mn,sc,ap);
+    drawFace(XCENTER,YCENTER,ap);
+    setTime(XCENTER,YCENTER,hr,mn,sc);
+    display.display();
+    delay(500);
+    display.clearDisplay();
+  }
+} //end loop
+void timeGet(int& getHour, int& getMinute, int& getSecond, char& amPm){ //pings for time, whatever method that may be
+  getHour = 4;
+  getMinute = 40;
+  getSecond = getSecond + 1;
+} //end timeGet
+void drawFace(int xcenter,int ycenter,char amPm){ //draws circle or whatever will be backdrop
+  display.drawCircle(xcenter, ycenter, 31, WHITE);
+  display.fillCircle(xcenter, ycenter, 3, WHITE); //just for aesthetic
+} //end drawFace
+void setTime(int xcenter, int ycenter, int drawHour, int drawMinute, int drawSecond){ //does calculations for hand lines while setting
+  double pi = 3.14159; //needed local constant
+  int rhr = 15; //radius of hour hand
+  int rmn = 25; //radius of minute hand
+  int rsc = 31; //radius of second hand
+  /*
+   * maths
+   * ~>take sin or cos of the percentage of the circle w/r/t
+   * the percentage of seconds/minutes/hours passed out of 60/60/12 and multiply by
+   * radius to find value, given circle is centered at (0,0). add offsets xcenter/ycenter 
+   * to adjust position
+   * 
+   * find y coordinate
+   * cos(2pi * minutes or seconds /60)* radius
+   * cos(2pi * hours/12)* radius
+   * 
+   * find x coordinate
+   * sin(2pi* minutes or seconds /60)* radius
+   * sin(2pi* hours/12)* radius
+   */
+  display.drawLine(xcenter, ycenter, int (sin(2*pi*drawHour/12)*rhr)+xcenter, int (-cos(2*pi*drawHour/12)*rhr)+ycenter, WHITE);//hour
+  display.drawLine(xcenter, ycenter, int (sin(2*pi*drawMinute/60)*rmn)+xcenter, int (-cos(2*pi*drawMinute/60)*rmn)+ycenter, WHITE);//minute
+  display.drawLine(xcenter, ycenter, int (sin(2*pi*drawSecond/60)*rsc)+xcenter, int (-cos(2*pi*drawSecond/60)*rsc)+ycenter, WHITE);//second
+} //end setTime
